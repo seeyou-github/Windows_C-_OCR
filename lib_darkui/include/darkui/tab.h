@@ -32,6 +32,10 @@ public:
         std::vector<TabItem> items;
         int selection = -1;
         TabVariant variant = TabVariant::Default;
+        int contentPaddingLeft = 0;
+        int contentPaddingTop = 0;
+        int contentPaddingRight = 0;
+        int contentPaddingBottom = 0;
         DWORD style = WS_CHILD | WS_VISIBLE | WS_TABSTOP;
         DWORD exStyle = 0;
     };
@@ -117,6 +121,10 @@ private:
     COLORREF itemHotOverlayColor_ = RGB(72, 80, 92);
     COLORREF textColor_ = RGB(210, 214, 220);
     COLORREF textActiveColor_ = RGB(245, 247, 250);
+    int contentPaddingLeft_ = 0;
+    int contentPaddingTop_ = 0;
+    int contentPaddingRight_ = 0;
+    int contentPaddingBottom_ = 0;
     // Theme currently used by the control.
     Theme theme_{};
 };

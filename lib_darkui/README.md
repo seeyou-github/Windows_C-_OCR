@@ -11,135 +11,22 @@
 
 ## Available Custom Controls
 
-### Button
+- `Button`: dark owner-draw push button with standard click notifications. See [doc/button.md](doc/button.md)
+- `CheckBox`: dark owner-draw checkbox with native-style checked behavior. See [doc/checkbox.md](doc/checkbox.md)
+- `ComboBox`: dark combo box with custom popup host and list rendering. See [doc/combobox.md](doc/combobox.md)
+- `Dialog`: modal dark popup dialog with confirm/cancel flow. See [doc/dialog.md](doc/dialog.md)
+- `Edit`: dark host plus inner native `EDIT`, with placeholder, read-only mode, and multiline support. See [doc/edit.md](doc/edit.md)
+- `ListBox`: dark list box wrapper with native selection and scrolling behavior. See [doc/listbox.md](doc/listbox.md)
+- `ListView`: native dark `SysListView32` wrapper with dark header and restrained styling. See [doc/listview.md](doc/listview.md)
+- `Panel`: dark card/container surface for grouping controls. See [doc/panel.md](doc/panel.md)
+- `ProgressBar`: dark progress bar with custom track, fill, and text. See [doc/progress.md](doc/progress.md)
+- `RadioButton`: dark owner-draw radio button with native grouping behavior. See [doc/radiobutton.md](doc/radiobutton.md)
+- `Slider`: dark slider with custom track, thumb, ticks, and `WM_HSCROLL`. See [doc/slider.md](doc/slider.md)
+- `Static`: dark static display control for text, icons, and bitmaps. See [doc/static.md](doc/static.md)
+- `Tab`: dark tab control with attached child pages and `TCN_SELCHANGE`. See [doc/tab.md](doc/tab.md)
+- `Toolbar`: dark toolbar with buttons, separators, drop-downs, overflow, and right-aligned items. See [doc/toolbar.md](doc/toolbar.md)
 
-- Custom dark owner-draw button
-- Normal, hover, pressed, and disabled states
-- Rounded corners and host surface color support
-- Preserves `WM_COMMAND + BN_CLICKED`
-
-See: [doc/button.md](doc/button.md)
-
-### ComboBox
-
-- Custom dark combo box
-- Custom-painted button area, popup host, and list items
-- Supports normal and accent items
-- Preserves `WM_COMMAND + CBN_SELCHANGE`
-
-See: [doc/combobox.md](doc/combobox.md)
-
-### Edit
-
-- Custom dark edit control
-- Dark host window plus inner native `EDIT`
-- Keeps native input, caret, selection, and IME behavior
-- Supports placeholder text, rounded shape, read-only mode, and multiline vertical scrolling
-
-See: [doc/edit.md](doc/edit.md)
-
-### Dialog
-
-- Modal dark popup dialog
-- Custom black title bar and dark background
-- Built-in confirm/cancel buttons and custom content host
-
-See: [doc/dialog.md](doc/dialog.md)
-
-### Static
-
-- Dark static display control
-- Supports text, icon, and bitmap presentation
-- Suitable for labels, titles, badges, and small previews
-
-See: [doc/static.md](doc/static.md)
-
-### Panel
-
-- Dark card/container surface
-- Rounded background and border for grouped content
-- Child controls can inherit the panel surface automatically
-
-See: [doc/panel.md](doc/panel.md)
-
-### ListBox
-
-- Dark list box
-- Rounded host surface plus native keyboard and scroll behavior
-- Supports single-select and multi-select usage
-
-See: [doc/listbox.md](doc/listbox.md)
-
-### CheckBox
-
-- Dark owner-drawn checkbox
-- Checked, unchecked, hover, and disabled states
-- Preserves `WM_COMMAND + BN_CLICKED`
-
-See: [doc/checkbox.md](doc/checkbox.md)
-
-### RadioButton
-
-- Dark owner-drawn radio button
-- Native auto-radio grouping behavior
-- Preserves `WM_COMMAND + BN_CLICKED`
-
-See: [doc/radiobutton.md](doc/radiobutton.md)
-
-### ProgressBar
-
-- Custom dark progress bar
-- Separate outer background, inner track, fill, and percentage text
-- Supports host surface color
-- Works well inside dark cards and panels
-
-See: [doc/progress.md](doc/progress.md)
-
-### ScrollBar
-
-- Custom dark scrollbar
-- Horizontal and vertical modes
-- Drag, page-step, and keyboard support
-- Preserves `WM_HSCROLL` / `WM_VSCROLL`
-
-See: [doc/scrollbar.md](doc/scrollbar.md)
-
-### Slider
-
-- Custom dark slider
-- Custom track, fill, thumb, and tick rendering
-- Mouse and keyboard interaction
-- Preserves `WM_HSCROLL`
-
-See: [doc/slider.md](doc/slider.md)
-
-### Tab
-
-- Custom dark tab control
-- Horizontal and vertical layouts
-- Supports attached child-page windows
-- Preserves `WM_NOTIFY + TCN_SELCHANGE`
-
-See: [doc/tab.md](doc/tab.md)
-
-### Table
-
-- Custom dark table control
-- Custom header, body, grid, and selection rendering
-- Column and row data management
-- Suitable for presentation-oriented data panels
-
-See: [doc/table.md](doc/table.md)
-
-### Toolbar
-
-- Custom dark toolbar
-- Supports standard buttons, icon buttons, right-aligned items, separators, drop-downs, and overflow
-- Icon sizing uses `ToolbarItem::iconScalePercent` with a default of `80%`, preserving aspect ratio
-- Use `theme.toolbarHeight` together with `MoveWindow(..., theme.toolbarHeight + 12, ...)` for the intended button height
-- Preserves `WM_COMMAND`
-
-See: [doc/toolbar.md](doc/toolbar.md)
+Native scrollbar theme note for native controls such as `Edit`, `ListBox`, and `ListView`: [doc/native-dark-scrollbar.md](doc/native-dark-scrollbar.md)
 
 ## Main Characteristics
 
@@ -193,14 +80,13 @@ This is available for:
 - `Dialog::Options`
 - `Edit::Options`
 - `ListBox::Options`
+- `ListView::Options`
 - `Panel::Options`
 - `ProgressBar::Options`
 - `RadioButton::Options`
-- `ScrollBar::Options`
 - `Slider::Options`
 - `Static::Options`
 - `Tab::Options`
-- `Table::Options`
 - `Toolbar::Options`
 
 Recommended example:
@@ -321,6 +207,41 @@ darkui::ShowConfirmDialog(
 
 See: [doc/quick.md](doc/quick.md)
 
+## Dialog Lifetime Note
+
+`darkui::Dialog` now uses a two-step close path for modal dialogs:
+
+- `EndDialog()` ends the modal loop and hides the popup first
+- final destruction happens later in `Destroy()` or the `Dialog` destructor
+
+This behavior is important for input dialogs. A real bug was found in production:
+
+- caller code opened a custom dialog with `Edit` controls
+- the user clicked Confirm
+- old dialog behavior destroyed the child controls immediately inside `EndDialog()`
+- caller code then tried to read the input text after `ShowModal()` returned
+- the read came back empty even though the user had typed valid text
+
+Recommended pattern:
+
+```cpp
+darkui::Dialog dialog;
+dialog.Create(hwnd, 5001, theme, options);
+
+// Create child Edit / ComboBox / other controls here.
+
+const darkui::Dialog::Result result = dialog.ShowModal();
+if (result == darkui::Dialog::Result::Confirm) {
+    // Read child control values here, before dialog goes out of scope.
+}
+// Destruction happens when dialog falls out of scope or Destroy() is called.
+```
+
+Avoid this pattern:
+
+- do not design code around child controls being destroyed inside `EndDialog()`
+- do not delay reading dialog input until after the owning wrapper object has already been destroyed
+
 ## Header Entry Points
 
 Unified include:
@@ -338,15 +259,14 @@ Per-control includes:
 #include "darkui/dialog.h"
 #include "darkui/edit.h"
 #include "darkui/listbox.h"
+#include "darkui/listview.h"
 #include "darkui/panel.h"
 #include "darkui/progress.h"
 #include "darkui/quick.h"
 #include "darkui/radiobutton.h"
-#include "darkui/scrollbar.h"
 #include "darkui/slider.h"
 #include "darkui/static.h"
 #include "darkui/tab.h"
-#include "darkui/table.h"
 #include "darkui/toolbar.h"
 ```
 
@@ -372,14 +292,13 @@ Windows_C++_lib_darkui/
     dialog.md
     edit.md
     listbox.md
+    listview.md
     panel.md
     progress.md
     radiobutton.md
-    scrollbar.md
     slider.md
     static.md
     tab.md
-    table.md
     toolbar.md
 ```
 
@@ -400,13 +319,12 @@ If you only need the demo build scripts, the current `demo/build_demo*.bat` file
 - [Dialog](doc/dialog.md)
 - [Edit](doc/edit.md)
 - [ListBox](doc/listbox.md)
+- [ListView](doc/listview.md)
 - [ProgressBar](doc/progress.md)
 - [Quick Helpers](doc/quick.md)
 - [RadioButton](doc/radiobutton.md)
-- [ScrollBar](doc/scrollbar.md)
 - [Slider](doc/slider.md)
 - [Static](doc/static.md)
 - [Tab](doc/tab.md)
-- [Table](doc/table.md)
 - [Toolbar](doc/toolbar.md)
 

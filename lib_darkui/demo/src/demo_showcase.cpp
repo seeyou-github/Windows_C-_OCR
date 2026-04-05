@@ -32,14 +32,11 @@ enum ControlId {
 
     ID_CONTROLS_EXPOSURE = 9201,
     ID_CONTROLS_BALANCE,
-    ID_CONTROLS_SCROLL_H,
-    ID_CONTROLS_SCROLL_V,
     ID_CONTROLS_SEARCH,
     ID_CONTROLS_NOTES,
 
     ID_DATA_FILTER = 9301,
     ID_DATA_REFRESH,
-    ID_DATA_TABLE,
     ID_DATA_QUEUE,
 
     ID_EXPANDED_STATIC_TITLE = 9401,
@@ -77,8 +74,6 @@ struct OverviewPanel {
 struct ControlsPanel {
     darkui::Slider exposure;
     darkui::Slider balance;
-    darkui::ScrollBar timeline;
-    darkui::ScrollBar navigator;
     darkui::Edit search;
     darkui::Edit notes;
 };
@@ -86,7 +81,6 @@ struct ControlsPanel {
 struct DataPanel {
     darkui::ComboBox filter;
     darkui::Button refresh;
-    darkui::Table table;
     darkui::ListBox queue;
 };
 
@@ -207,21 +201,6 @@ void UpdateExpandedSummary(AppState* state) {
     state->expanded.result.SetText(text);
 }
 
-void RefreshDataRows(AppState* state) {
-    const int filter = state->data.filter.GetSelection();
-    std::vector<darkui::TableRow> rows{
-        {L"Campaign Boards", L"Cloud", L"Ready", L"4.2 GB", L"12:44"},
-        {L"Studio Takes", L"Local", L"Queued", L"2.1 GB", L"11:02"},
-        {L"Audio Stems", L"NAS", L"Ready", L"918 MB", L"09:31"},
-        {L"Launch Review", L"Archive", L"Locked", L"690 MB", L"Yesterday"},
-        {L"Proxy Drafts", L"Cloud", L"Syncing", L"6.8 GB", L"Now"},
-        {L"Final Captures", L"SSD", L"Ready", L"1.7 GB", L"14:08"}
-    };
-    if (filter == 1) rows.erase(std::remove_if(rows.begin(), rows.end(), [](const darkui::TableRow& r) { return r[2] != L"Ready"; }), rows.end());
-    if (filter == 2) rows.erase(std::remove_if(rows.begin(), rows.end(), [](const darkui::TableRow& r) { return r[1] != L"Cloud"; }), rows.end());
-    state->data.table.SetRows(rows);
-}
-
 void ShowExpandedDialog(HWND ownerWindow, AppState* state) {
     const auto result = darkui::ShowConfirmDialog(ownerWindow,
                                                   9701,
@@ -323,8 +302,6 @@ void LayoutControlsPage(HWND page, AppState* state) {
 
     MoveWindow(state->controls.exposure.hwnd(), ti.left, ti.top + 62, ti.right - ti.left, 42, TRUE);
     MoveWindow(state->controls.balance.hwnd(), ti.left, ti.top + 156, ti.right - ti.left, 42, TRUE);
-    MoveWindow(state->controls.timeline.hwnd(), li.left, li.top + 78, li.right - li.left, state->theme.scrollBarThickness + 12, TRUE);
-    MoveWindow(state->controls.navigator.hwnd(), li.right - 22, li.top + 126, 18, std::max(100L, li.bottom - li.top - 144), TRUE);
     MoveWindow(state->controls.search.hwnd(), ri.left, ri.top + 62, ri.right - ri.left, 40, TRUE);
     MoveWindow(state->controls.notes.hwnd(), ri.left, ri.top + 122, ri.right - ri.left, std::max(118L, ri.bottom - ri.top - 136), TRUE);
 }
@@ -334,12 +311,10 @@ void LayoutDataPage(HWND page, AppState* state) {
     RECT content = InsetRectCopy(client, 28, 28);
     RECT bar = SliceTop(content, 42);
     RECT bottom{content.left, bar.bottom + 20, content.right, content.bottom};
-    RECT left = SliceLeft(bottom, ((bottom.right - bottom.left) - 20) / 2);
-    RECT right{left.right + 20, bottom.top, bottom.right, bottom.bottom};
+    RECT right = bottom;
 
     MoveWindow(state->data.filter.hwnd(), bar.left, bar.top, 240, 42, TRUE);
     MoveWindow(state->data.refresh.hwnd(), bar.right - 146, bar.top, 146, 42, TRUE);
-    MoveWindow(state->data.table.hwnd(), left.left, left.top, left.right - left.left, left.bottom - left.top, TRUE);
     MoveWindow(state->data.queue.hwnd(), right.left, right.top, right.right - right.left, right.bottom - right.top, TRUE);
 }
 
@@ -424,7 +399,7 @@ void PaintControlsPage(HWND page, HDC dc, PageState* state) {
     DrawLabel(dc, state->app->host.body_font(), state->app->theme.mutedText, RECT{ti.left, ti.top + 34, ti.right, ti.top + 52}, L"Exposure", DT_LEFT | DT_TOP | DT_SINGLELINE);
     DrawLabel(dc, state->app->host.body_font(), state->app->theme.mutedText, RECT{ti.left, ti.top + 128, ti.right, ti.top + 146}, L"Balance", DT_LEFT | DT_TOP | DT_SINGLELINE);
     DrawLabel(dc, state->app->host.section_font(), state->app->theme.text, SliceTop(li, 26), L"Custom Scrollbars", DT_LEFT | DT_TOP | DT_SINGLELINE);
-    DrawLabel(dc, state->app->host.body_font(), state->app->theme.mutedText, RECT{li.left, li.top + 34, li.right, li.top + 56}, L"Horizontal timeline and vertical navigation rail.", DT_LEFT | DT_TOP | DT_WORDBREAK);
+    DrawLabel(dc, state->app->host.body_font(), state->app->theme.mutedText, RECT{li.left, li.top + 34, li.right, li.top + 56}, L"Two slider densities sharing one semantic theme entry.", DT_LEFT | DT_TOP | DT_WORDBREAK);
     DrawLabel(dc, state->app->host.section_font(), state->app->theme.text, SliceTop(ri, 26), L"Dark Edit Surfaces", DT_LEFT | DT_TOP | DT_SINGLELINE);
     DrawLabel(dc, state->app->host.body_font(), state->app->theme.mutedText, RECT{ri.left, ri.top + 34, ri.right, ri.top + 56}, L"Single-line search plus multiline notes.", DT_LEFT | DT_TOP | DT_WORDBREAK);
 }
@@ -434,11 +409,9 @@ void PaintDataPage(HWND page, HDC dc, PageState* state) {
     RECT content = InsetRectCopy(client, 28, 28);
     RECT bar = SliceTop(content, 42);
     RECT bottom{content.left, bar.bottom + 20, content.right, content.bottom};
-    RECT left = SliceLeft(bottom, ((bottom.right - bottom.left) - 20) / 2);
-    RECT right{left.right + 20, bottom.top, bottom.right, bottom.bottom};
+    RECT right = bottom;
     DrawLabel(dc, state->app->host.section_font(), state->app->theme.text, RECT{content.left, content.top - 4, content.right, content.top + 22}, L"Data Density", DT_LEFT | DT_TOP | DT_SINGLELINE);
-    DrawLabel(dc, state->app->host.body_font(), state->app->theme.mutedText, RECT{content.left, content.top + 24, content.right, content.top + 46}, L"Custom table and list box using the same semantic palette and font system.", DT_LEFT | DT_TOP | DT_WORDBREAK);
-    FillRoundedRect(dc, left, 24, state->app->theme.panel, state->app->theme.border);
+    DrawLabel(dc, state->app->host.body_font(), state->app->theme.mutedText, RECT{content.left, content.top + 24, content.right, content.top + 46}, L"Queue-focused data panel using the same semantic palette and font system.", DT_LEFT | DT_TOP | DT_WORDBREAK);
     FillRoundedRect(dc, right, 24, state->app->theme.panel, state->app->theme.border);
 }
 
@@ -517,23 +490,17 @@ bool CreateControlsPanel(AppState* app) {
     darkui::Slider::Options balanceOptions = exposureOptions;
     balanceOptions.value = 42; balanceOptions.tickCount = 7;
     balanceOptions.variant = darkui::SliderVariant::Dense;
-    darkui::ScrollBar::Options timelineOptions;
-    timelineOptions.vertical = false; timelineOptions.minimum = 0; timelineOptions.maximum = 100; timelineOptions.pageSize = 20; timelineOptions.value = 34;
-    darkui::ScrollBar::Options navigatorOptions;
-    navigatorOptions.vertical = true; navigatorOptions.minimum = 0; navigatorOptions.maximum = 100; navigatorOptions.pageSize = 18; navigatorOptions.value = 26;
     darkui::Edit::Options searchOptions;
     searchOptions.cueBanner = L"Search sessions";
     searchOptions.variant = darkui::FieldVariant::Default;
     darkui::Edit::Options notesOptions;
-    notesOptions.text = L"Dark multiline edit\nwith the custom dark vertical scrollbar\nlinked to the shared theme.";
+    notesOptions.text = L"Dark multiline edit\nwith the native vertical scrollbar\nlinked to the shared theme.";
     notesOptions.cueBanner = L"Write notes here";
     notesOptions.variant = darkui::FieldVariant::Panel;
     notesOptions.style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL;
 
     if (!app->controls.exposure.Create(app->controlsPage, ID_CONTROLS_EXPOSURE, app->theme, exposureOptions)) return false;
     if (!app->controls.balance.Create(app->controlsPage, ID_CONTROLS_BALANCE, app->theme, balanceOptions)) return false;
-    if (!app->controls.timeline.Create(app->controlsPage, ID_CONTROLS_SCROLL_H, app->theme, timelineOptions)) return false;
-    if (!app->controls.navigator.Create(app->controlsPage, ID_CONTROLS_SCROLL_V, app->theme, navigatorOptions)) return false;
     if (!app->controls.search.Create(app->controlsPage, ID_CONTROLS_SEARCH, app->theme, searchOptions)) return false;
     if (!app->controls.notes.Create(app->controlsPage, ID_CONTROLS_NOTES, app->theme, notesOptions)) return false;
     return true;
@@ -547,19 +514,14 @@ bool CreateDataPanel(AppState* app) {
     darkui::Button::Options refreshOptions;
     refreshOptions.text = L"Refresh";
     refreshOptions.variant = darkui::ButtonVariant::Secondary;
-    darkui::Table::Options tableOptions;
-    tableOptions.columns = {{L"Collection", 220, LVCFMT_LEFT}, {L"Source", 100, LVCFMT_LEFT}, {L"State", 110, LVCFMT_LEFT}, {L"Size", 100, LVCFMT_RIGHT}, {L"Updated", 110, LVCFMT_LEFT}};
-    tableOptions.drawEmptyGrid = true;
     darkui::ListBox::Options queueOptions;
     queueOptions.variant = darkui::FieldVariant::Panel;
-    queueOptions.items = {{L"Queued color pass", 1}, {L"Archive sync", 2}, {L"Proxy rebuild", 3}, {L"Review package", 4}, {L"Audio conform", 5}};
+    queueOptions.items = {{L"Queued color pass", 1}, {L"Archive sync", 2}, {L"Proxy rebuild", 3}, {L"Review package", 4}, {L"Audio conform", 5}, {L"Ready cloud sync", 6}, {L"Locked archive copy", 7}, {L"Background checksum", 8}};
     queueOptions.selection = 0;
 
     if (!app->data.filter.Create(app->dataPage, ID_DATA_FILTER, app->theme, filterOptions)) return false;
     if (!app->data.refresh.Create(app->dataPage, ID_DATA_REFRESH, app->theme, refreshOptions)) return false;
-    if (!app->data.table.Create(app->dataPage, ID_DATA_TABLE, app->theme, tableOptions)) return false;
     if (!app->data.queue.Create(app->dataPage, ID_DATA_QUEUE, app->theme, queueOptions)) return false;
-    RefreshDataRows(app);
     return true;
 }
 
@@ -663,13 +625,10 @@ bool CreateShowcase(AppState* state, HWND window) {
                              state->overview.cpu,
                              state->controls.exposure,
                              state->controls.balance,
-                             state->controls.timeline,
-                             state->controls.navigator,
                              state->controls.search,
                              state->controls.notes,
                              state->data.filter,
                              state->data.refresh,
-                             state->data.table,
                              state->data.queue,
                              state->expanded.leftCard,
                              state->expanded.rightCard,
@@ -777,7 +736,7 @@ LRESULT CALLBACK ShowcaseWindowProc(HWND window, UINT message, WPARAM wParam, LP
             case ID_THEME_GLACIER: ApplyTheme(state, window, 2); return 0;
             case ID_THEME_MOSS: ApplyTheme(state, window, 3); return 0;
             case ID_THEME_MONO: ApplyTheme(state, window, 4); return 0;
-            case ID_DATA_REFRESH: RefreshDataRows(state); return 0;
+            case ID_DATA_REFRESH: return 0;
             case ID_EXPANDED_CHECK_AUTOSAVE:
             case ID_EXPANDED_CHECK_COMPACT:
             case ID_EXPANDED_RADIO_GRID:
@@ -793,7 +752,6 @@ LRESULT CALLBACK ShowcaseWindowProc(HWND window, UINT message, WPARAM wParam, LP
             }
         }
         if (HIWORD(wParam) == CBN_SELCHANGE && LOWORD(wParam) == ID_DATA_FILTER) {
-            RefreshDataRows(state);
             return 0;
         }
         break;

@@ -94,7 +94,18 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             {L"Transfers", 2},
             {L"Snapshots", 3},
             {L"Exports", 4},
-            {L"Audit Trail", 5}
+            {L"Audit Trail", 5},
+            {L"Queue Depth", 6},
+            {L"Retry Policy", 7},
+            {L"Session History", 8},
+            {L"Device Sync", 9},
+            {L"Pinned Alerts", 10},
+            {L"Release Notes", 11},
+            {L"Perf Capture", 12},
+            {L"Storage Health", 13},
+            {L"Retention Rules", 14},
+            {L"Crash Summary", 15},
+            {L"Timeline Export", 16}
         };
         singleOptions.selection = 0;
         darkui::ListBox::Options multiOptions;
@@ -106,7 +117,18 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             {L"Archive jobs", 12},
             {L"Review links", 13},
             {L"Local cache", 14},
-            {L"Proxy build", 15}
+            {L"Proxy build", 15},
+            {L"Telemetry stream", 16},
+            {L"Search index", 17},
+            {L"Offline bundle", 18},
+            {L"Theme cache", 19},
+            {L"ADB bridge", 20},
+            {L"Crash uploads", 21},
+            {L"Diagnostics feed", 22},
+            {L"Session snapshots", 23},
+            {L"Bookmark sync", 24},
+            {L"Observer tasks", 25},
+            {L"Package staging", 26}
         };
 
         if (!created->singleList.Create(window, ID_LIST_SINGLE, created->host.theme(), singleOptions) ||
@@ -161,7 +183,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             RECT statusRect{32, client.bottom - 54, client.right - 32, client.bottom - 22};
 
             DrawLine(dc, state->host.title_font(), state->host.theme().text, titleRect, L"Dark ListBox Demo", DT_LEFT | DT_TOP | DT_SINGLELINE);
-            DrawLine(dc, state->host.body_font(), state->host.theme().mutedText, descRect, L"Left: single-select list. Right: extended multi-select list. Both use a dark rounded host and native keyboard navigation.", DT_LEFT | DT_TOP | DT_WORDBREAK);
+            DrawLine(dc, state->host.body_font(), state->host.theme().mutedText, descRect, L"Left: single-select list. Right: extended multi-select list. Both now have enough items to force native scrollbars, and the LISTBOX theme path uses DarkMode_Explorer for a dark gray scrollbar.", DT_LEFT | DT_TOP | DT_WORDBREAK);
             DrawLine(dc, state->host.body_font(), state->host.theme().text, leftRect, L"Single Select", DT_LEFT | DT_TOP | DT_SINGLELINE);
             DrawLine(dc, state->host.body_font(), state->host.theme().text, rightRect, L"Extended Multi Select", DT_LEFT | DT_TOP | DT_SINGLELINE);
             DrawLine(dc, state->host.body_font(), state->host.theme().text, statusRect, state->status.c_str(), DT_LEFT | DT_VCENTER | DT_SINGLELINE);

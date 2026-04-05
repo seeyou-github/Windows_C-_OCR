@@ -132,6 +132,16 @@ struct Tab::Impl {
         } else {
             client.top += std::max(24, owner->theme_.tabHeight);
         }
+        client.left += owner->contentPaddingLeft_;
+        client.top += owner->contentPaddingTop_;
+        client.right -= owner->contentPaddingRight_;
+        client.bottom -= owner->contentPaddingBottom_;
+        if (client.right < client.left) {
+            client.right = client.left;
+        }
+        if (client.bottom < client.top) {
+            client.bottom = client.top;
+        }
         return client;
     }
 
@@ -186,7 +196,7 @@ struct Tab::Impl {
                        FALSE);
             ShowWindow(page, i == selected ? SW_SHOW : SW_HIDE);
             if (i == selected) {
-                RedrawWindow(page, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+                RedrawWindow(page, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN);
             }
         }
     }
@@ -302,6 +312,30 @@ struct Tab::Impl {
             self->UpdatePageVisibility();
             self->InvalidateStrip();
             return 0;
+        case WM_COMMAND:
+            if (self->owner->parentHwnd_) {
+                return SendMessageW(self->owner->parentHwnd_, WM_COMMAND, wParam, lParam);
+            }
+            return 0;
+        case WM_NOTIFY:
+            if (self->owner->parentHwnd_) {
+                return SendMessageW(self->owner->parentHwnd_, WM_NOTIFY, wParam, lParam);
+            }
+            return 0;
+        case WM_HSCROLL:
+        case WM_VSCROLL:
+            if (self->owner->parentHwnd_) {
+                return SendMessageW(self->owner->parentHwnd_, message, wParam, lParam);
+            }
+            return 0;
+        case WM_CTLCOLORBTN:
+        case WM_CTLCOLORDLG:
+        case WM_CTLCOLOREDIT:
+        case WM_CTLCOLORLISTBOX:
+            if (self->owner->parentHwnd_) {
+                return SendMessageW(self->owner->parentHwnd_, message, wParam, lParam);
+            }
+            return 0;
         case WM_MOUSEMOVE: {
             POINT pt{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
             const int index = self->HitTest(pt);
@@ -344,18 +378,6 @@ struct Tab::Impl {
             if (wParam == VK_END) {
                 self->owner->SetSelection(static_cast<int>(self->items.size()) - 1, true);
                 return 0;
-            }
-            break;
-        case WM_COMMAND:
-        case WM_NOTIFY:
-        case WM_HSCROLL:
-        case WM_VSCROLL:
-        case WM_CTLCOLORBTN:
-        case WM_CTLCOLORDLG:
-        case WM_CTLCOLOREDIT:
-        case WM_CTLCOLORLISTBOX:
-            if (self->owner->parentHwnd_) {
-                return SendMessageW(self->owner->parentHwnd_, message, wParam, lParam);
             }
             break;
         default:
@@ -403,6 +425,10 @@ bool Tab::Create(HWND parent, int controlId, const Theme& theme, const Options& 
     controlId_ = controlId;
     theme_ = ResolveTheme(theme);
     variant_ = options.variant;
+    contentPaddingLeft_ = std::max(0, options.contentPaddingLeft);
+    contentPaddingTop_ = std::max(0, options.contentPaddingTop);
+    contentPaddingRight_ = std::max(0, options.contentPaddingRight);
+    contentPaddingBottom_ = std::max(0, options.contentPaddingBottom);
     impl_->instance = reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(parent, GWLP_HINSTANCE));
     if (!impl_->instance) {
         impl_->instance = GetModuleHandleW(nullptr);

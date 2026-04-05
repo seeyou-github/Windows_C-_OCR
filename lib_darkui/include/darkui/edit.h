@@ -81,6 +81,8 @@ public:
     // Parameters:
     // - readOnly: When true, the inner EDIT becomes non-editable but keeps the same dark colors.
     void SetReadOnly(bool readOnly);
+    // Enables or disables the native vertical scrollbar style on the inner EDIT.
+    void SetVerticalScrollVisible(bool visible);
     // Returns the latest internal layout debug string for this control.
     std::wstring DebugLayoutInfo() const;
 

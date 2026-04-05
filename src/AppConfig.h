@@ -9,7 +9,10 @@ namespace app {
 
 struct ProviderModel {
     std::wstring id;
+    std::wstring displayName;
     bool enabled = true;
+    bool custom = false;
+    bool reasoning = false;
 };
 
 struct ProviderConfig {
@@ -20,6 +23,7 @@ struct ProviderConfig {
     std::wstring apiPath;
     bool enabled = true;
     bool builtIn = false;
+    bool streamResponse = false;
     std::vector<ProviderModel> models;
 };
 
@@ -31,10 +35,20 @@ struct HotkeyConfig {
 struct AppConfig {
     std::vector<ProviderConfig> providers;
     std::wstring defaultProviderId;
+    std::wstring defaultOcrProviderId;
+    std::wstring defaultTranslateProviderId;
     std::wstring defaultOcrModel;
     std::wstring defaultTranslateModel;
+    std::wstring ocrPrompt;
+    std::wstring translateTextPrompt;
+    std::wstring ocrResultFilter;
+    std::wstring translateResultFilter;
+    bool startInTray = true;
+    bool copyAfterHotkeyOcr = false;
     std::wstring themeName = L"graphite";
     int fontSize = 18;
+    int mainWindowWidth = 860;
+    int mainWindowHeight = 860;
     HotkeyConfig ocrHotkey{};
     HotkeyConfig translateHotkey{};
 };

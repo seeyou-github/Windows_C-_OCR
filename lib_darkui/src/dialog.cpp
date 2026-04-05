@@ -298,9 +298,35 @@ LRESULT CALLBACK DialogWindowProcThunk(HWND window, UINT message, WPARAM wParam,
 
 LRESULT CALLBACK DialogContentWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
     auto* brush = reinterpret_cast<HBRUSH>(GetPropW(window, L"DarkUiDialogContentBrush"));
+    HWND parent = GetParent(window);
     switch (message) {
     case WM_ERASEBKGND:
         return 1;
+    case WM_COMMAND:
+        if (parent) {
+            return SendMessageW(parent, WM_COMMAND, wParam, lParam);
+        }
+        return 0;
+    case WM_NOTIFY:
+        if (parent) {
+            return SendMessageW(parent, WM_NOTIFY, wParam, lParam);
+        }
+        return 0;
+    case WM_HSCROLL:
+    case WM_VSCROLL:
+        if (parent) {
+            return SendMessageW(parent, message, wParam, lParam);
+        }
+        return 0;
+    case WM_CTLCOLORBTN:
+    case WM_CTLCOLORDLG:
+    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLORLISTBOX:
+    case WM_CTLCOLORSTATIC:
+        if (parent) {
+            return SendMessageW(parent, message, wParam, lParam);
+        }
+        break;
     case WM_PAINT: {
         PAINTSTRUCT ps{};
         HDC dc = BeginPaint(window, &ps);
@@ -552,8 +578,7 @@ void Dialog::EndDialog(Result result) {
         SetActiveWindow(ownerHwnd_);
     }
     if (dialogHwnd_) {
-        DestroyWindow(dialogHwnd_);
-        dialogHwnd_ = nullptr;
+        ShowWindow(dialogHwnd_, SW_HIDE);
     }
 }
 

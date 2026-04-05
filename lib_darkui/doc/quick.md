@@ -20,11 +20,9 @@ This helper layer is the recommended companion for the new per-control `Options`
 - `ListBox::Options`
 - `ProgressBar::Options`
 - `RadioButton::Options`
-- `ScrollBar::Options`
 - `Slider::Options`
 - `Static::Options`
 - `Tab::Options`
-- `Table::Options`
 - `Toolbar::Options`
 
 ## Files

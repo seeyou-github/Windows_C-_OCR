@@ -203,10 +203,14 @@ struct Theme {
     COLORREF tableBackground = RGB(34, 36, 40);
     // Table body text color.
     COLORREF tableText = RGB(224, 227, 232);
+    // Selected table row text color.
+    COLORREF tableSelectedText = RGB(245, 247, 250);
     // Table header background color.
     COLORREF tableHeaderBackground = RGB(44, 47, 52);
     // Table header text color.
     COLORREF tableHeaderText = RGB(224, 227, 232);
+    // Selected table row background color.
+    COLORREF tableSelectedBackground = RGB(39, 66, 116);
     // Table grid and separator color.
     COLORREF tableGrid = RGB(61, 66, 74);
     // Slider outer background color.
@@ -303,6 +307,8 @@ struct Theme {
 struct ComboItem {
     // Text shown to the user.
     std::wstring text;
+    // Optional text shown only on the collapsed combo button.
+    std::wstring displayText;
     // Optional application-owned payload value.
     std::uintptr_t userData = 0;
     // Marks the item as visually accented when true.
@@ -389,6 +395,7 @@ public:
         std::vector<ComboItem> items;
         int selection = -1;
         int cornerRadius = -1;
+        int popupWidth = -1;
         FieldVariant variant = FieldVariant::Default;
         DWORD style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_OWNERDRAW;
         DWORD exStyle = 0;
@@ -419,6 +426,8 @@ public:
     const Theme& theme() const { return theme_; }
     // Returns the current corner radius in pixels.
     int corner_radius() const { return cornerRadius_; }
+    // Returns the popup list width in pixels. Values <= 0 follow the main control width.
+    int popup_width() const { return popupWidth_; }
 
     // Replaces the current theme and repaints the combo box and popup.
     // Parameter:
@@ -461,6 +470,8 @@ public:
     ComboItem GetItem(int index) const;
     // Sets the outer corner radius of the combo-box button.
     void SetCornerRadius(int radius);
+    // Sets the popup list width in pixels. Values <= 0 follow the main control width.
+    void SetPopupWidth(int width);
 
 private:
     struct Impl;
@@ -484,6 +495,8 @@ private:
     FieldVariant variant_ = FieldVariant::Default;
     // Effective popup/button item height for this combo-box instance.
     int itemHeight_ = 24;
+    // Popup width override in pixels. Values <= 0 follow the main control width.
+    int popupWidth_ = -1;
     // Theme currently used by the control.
     Theme theme_{};
 };

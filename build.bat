@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 setlocal
 
 chcp 65001 >nul
@@ -9,11 +9,15 @@ if not exist build mkdir build
 set CXX=g++
 set RC=windres
 set CXXFLAGS=-std=c++17 -DUNICODE -D_UNICODE -finput-charset=UTF-8 -fexec-charset=UTF-8 -Isrc -Ilib_darkui\include
-set LDFLAGS=-municode -mwindows -lcomdlg32 -lwininet -lcomctl32 -lshell32 -lole32 -loleaut32 -luuid -ldwmapi -luxtheme -lgdi32
+set LDFLAGS=-municode -mwindows -lcomdlg32 -lwininet -lcomctl32 -lshell32 -lole32 -loleaut32 -luuid -ldwmapi -luxtheme -lgdi32 -lgdiplus
 
 %CXX% -c src\main.cpp %CXXFLAGS% -o build\main.o
 if errorlevel 1 goto error
 %CXX% -c src\MainWindow.cpp %CXXFLAGS% -o build\MainWindow.o
+if errorlevel 1 goto error
+%CXX% -c src\CaptureOverlay.cpp %CXXFLAGS% -o build\CaptureOverlay.o
+if errorlevel 1 goto error
+%CXX% -c src\Screenshot.cpp %CXXFLAGS% -o build\Screenshot.o
 if errorlevel 1 goto error
 %CXX% -c src\SettingsWindow.cpp %CXXFLAGS% -o build\SettingsWindow.o
 if errorlevel 1 goto error
@@ -24,6 +28,14 @@ if errorlevel 1 goto error
 %CXX% -c src\AppConfig.cpp %CXXFLAGS% -o build\AppConfig.o
 if errorlevel 1 goto error
 %CXX% -c src\OcrService.cpp %CXXFLAGS% -o build\OcrService.o
+if errorlevel 1 goto error
+%CXX% -c src\ProviderServiceBase.cpp %CXXFLAGS% -o build\ProviderServiceBase.o
+if errorlevel 1 goto error
+%CXX% -c src\OpenAiCompatibleProviderService.cpp %CXXFLAGS% -o build\OpenAiCompatibleProviderService.o
+if errorlevel 1 goto error
+%CXX% -c src\SiliconFlowProviderService.cpp %CXXFLAGS% -o build\SiliconFlowProviderService.o
+if errorlevel 1 goto error
+%CXX% -c src\ZhipuProviderService.cpp %CXXFLAGS% -o build\ZhipuProviderService.o
 if errorlevel 1 goto error
 
 %CXX% -c lib_darkui\src\button.cpp %CXXFLAGS% -o build\dark_button.o
@@ -38,13 +50,13 @@ if errorlevel 1 goto error
 if errorlevel 1 goto error
 %CXX% -c lib_darkui\src\listbox.cpp %CXXFLAGS% -o build\dark_listbox.o
 if errorlevel 1 goto error
+%CXX% -c lib_darkui\src\listview.cpp %CXXFLAGS% -o build\dark_listview.o
+if errorlevel 1 goto error
 %CXX% -c lib_darkui\src\panel.cpp %CXXFLAGS% -o build\dark_panel.o
 if errorlevel 1 goto error
 %CXX% -c lib_darkui\src\progress.cpp %CXXFLAGS% -o build\dark_progress.o
 if errorlevel 1 goto error
 %CXX% -c lib_darkui\src\radiobutton.cpp %CXXFLAGS% -o build\dark_radiobutton.o
-if errorlevel 1 goto error
-%CXX% -c lib_darkui\src\scrollbar.cpp %CXXFLAGS% -o build\dark_scrollbar.o
 if errorlevel 1 goto error
 %CXX% -c lib_darkui\src\slider.cpp %CXXFLAGS% -o build\dark_slider.o
 if errorlevel 1 goto error
@@ -62,8 +74,8 @@ if errorlevel 1 goto error
 
 echo Linking...
 %CXX% ^
- build\main.o build\MainWindow.o build\SettingsWindow.o build\AppTheme.o build\UiText.o build\AppConfig.o build\OcrService.o ^
- build\dark_button.o build\dark_checkbox.o build\dark_combobox.o build\dark_dialog.o build\dark_edit.o build\dark_listbox.o build\dark_panel.o build\dark_progress.o build\dark_radiobutton.o build\dark_scrollbar.o build\dark_slider.o build\dark_static.o build\dark_tab.o build\dark_host.o build\dark_toolbar.o build\resource.o ^
+ build\main.o build\MainWindow.o build\CaptureOverlay.o build\Screenshot.o build\SettingsWindow.o build\AppTheme.o build\UiText.o build\AppConfig.o build\OcrService.o build\ProviderServiceBase.o build\OpenAiCompatibleProviderService.o build\SiliconFlowProviderService.o build\ZhipuProviderService.o ^
+ build\dark_button.o build\dark_checkbox.o build\dark_combobox.o build\dark_dialog.o build\dark_edit.o build\dark_listbox.o build\dark_listview.o build\dark_panel.o build\dark_progress.o build\dark_radiobutton.o build\dark_slider.o build\dark_static.o build\dark_tab.o build\dark_host.o build\dark_toolbar.o build\resource.o ^
  -o build\Win32OCR.exe %LDFLAGS%
 if errorlevel 1 goto error
 
@@ -77,3 +89,4 @@ exit /b 1
 
 :end
 endlocal
+

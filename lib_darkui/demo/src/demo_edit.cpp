@@ -116,10 +116,15 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         darkui::Edit::Options primaryEditOptions;
         primaryEditOptions.text = L"A borderless dark edit control";
         primaryEditOptions.variant = darkui::FieldVariant::Default;
+        primaryEditOptions.cornerRadius = 0;
         darkui::Edit::Options secondaryEditOptions;
-        secondaryEditOptions.text = L"First note line\r\nSecond note line\r\nThird note line";
-        secondaryEditOptions.cueBanner = L"Type here. Multiline and vertical scrolling stay dark.";
+        secondaryEditOptions.text =
+            L"First note line\r\nSecond note line\r\nThird note line\r\nFourth note line\r\nFifth note line\r\n"
+            L"Sixth note line\r\nSeventh note line\r\nEighth note line\r\nNinth note line\r\nTenth note line\r\n"
+            L"Eleventh note line\r\nTwelfth note line\r\nThirteenth note line\r\nFourteenth note line";
+        secondaryEditOptions.cueBanner = L"Type here. Multiline now uses the native dark Explorer scrollbar.";
         secondaryEditOptions.variant = darkui::FieldVariant::Panel;
+        secondaryEditOptions.cornerRadius = 0;
         secondaryEditOptions.style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL;
         darkui::Button::Options changeButtonOptions;
         changeButtonOptions.variant = darkui::ButtonVariant::Secondary;
@@ -209,9 +214,9 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             RECT debugRect{32, client.bottom - 64, client.right - 32, client.bottom - 16};
 
             DrawLine(dc, state->host.title_font(), state->host.theme().text, titleRect, L"Dark Edit Demo", DT_LEFT | DT_TOP | DT_SINGLELINE);
-            DrawLine(dc, state->host.body_font(), state->host.theme().mutedText, descRect, L"Single-line and multiline rounded dark edits with no visible native border line. Placeholder text color is theme-driven and remains available through the custom fallback overlay.", DT_LEFT | DT_TOP | DT_WORDBREAK);
+            DrawLine(dc, state->host.body_font(), state->host.theme().mutedText, descRect, L"Both edits now use square outer corners. The multiline edit keeps the native vertical scrollbar and lets Explorer dark theme drive its dark gray appearance.", DT_LEFT | DT_TOP | DT_WORDBREAK);
             DrawTextW(dc,
-                      L"Try focus changes, typing, selection, IME input, and multiline scrolling.\nThe lower edit uses ES_MULTILINE + ES_AUTOVSCROLL + WS_VSCROLL while keeping the same dark host surface.",
+                      L"Try focus changes, typing, selection, IME input, and multiline scrolling.\nThe lower edit keeps WS_VSCROLL on the native EDIT and no longer depends on a separate custom scrollbar control.",
                       -1,
                       &noteRect,
                       DT_LEFT | DT_TOP | DT_WORDBREAK | DT_NOPREFIX);

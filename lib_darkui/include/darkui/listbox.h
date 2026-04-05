@@ -15,6 +15,10 @@ struct ListBoxItem {
     std::wstring text;
     // Optional application-owned payload value.
     std::uintptr_t userData = 0;
+    // Optional text color hint used by some views.
+    COLORREF textColor = CLR_INVALID;
+    // Optional row background color hint used by some views.
+    COLORREF backgroundColor = CLR_INVALID;
 };
 
 // Dark list box built from a rounded host window plus an inner native LISTBOX.

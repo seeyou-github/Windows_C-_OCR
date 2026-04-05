@@ -1,5 +1,4 @@
-#include "darkui/themed_window_host.h"
-
+﻿#include "darkui/themed_window_host.h"
 #include <dwmapi.h>
 
 namespace darkui {
@@ -18,32 +17,6 @@ namespace {
 #define DWMWA_BORDER_COLOR 34
 #endif
 
-HFONT CreateSafeFont(const FontSpec& requested) {
-    FontSpec spec = requested;
-    if (spec.height == 0) {
-        spec.height = -18;
-    }
-    if (spec.family.empty()) {
-        spec.family = L"Segoe UI";
-    }
-
-    HFONT font = CreateFont(spec);
-    if (font) {
-        return font;
-    }
-
-    NONCLIENTMETRICSW metrics{};
-    metrics.cbSize = sizeof(metrics);
-    if (SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(metrics), &metrics, 0)) {
-        metrics.lfMessageFont.lfHeight = spec.height;
-        metrics.lfMessageFont.lfWeight = spec.weight;
-        metrics.lfMessageFont.lfItalic = spec.italic ? TRUE : FALSE;
-        return CreateFontIndirectW(&metrics.lfMessageFont);
-    }
-
-    return nullptr;
-}
-
 }  // namespace
 
 ThemedWindowHost::ThemedWindowHost() = default;
@@ -52,10 +25,8 @@ ThemedWindowHost::~ThemedWindowHost() {
     Detach();
 }
 
-bool ThemedWindowHost::Attach(HWND hwnd, const Options& options) {
-    Detach();
-    if (!hwnd) {
-        return false;
+bool ThemedWindowHost::Attach(HWND hwnd, const Options& options) {    Detach();
+    if (!hwnd) {        return false;
     }
 
     hwnd_ = hwnd;
@@ -66,7 +37,7 @@ bool ThemedWindowHost::Attach(HWND hwnd, const Options& options) {
     sectionFontOffset_ = options.sectionFontOffset;
     bodyFontOffset_ = options.bodyFontOffset;
 
-    return RebuildResources(options.theme);
+    const bool ok = RebuildResources(options.theme);    return ok;
 }
 
 void ThemedWindowHost::Detach() {
@@ -143,53 +114,30 @@ void ThemedWindowHost::Invalidate(bool erase) const {
     }
 }
 
-bool ThemedWindowHost::RebuildResources(const Theme& theme) {
-    const Theme resolved = ResolveTheme(theme);
-
-    HBRUSH newBackgroundBrush = CreateSolidBrush(resolved.background);
-    if (!newBackgroundBrush) {
-        newBackgroundBrush = CreateSolidBrush(RGB(18, 20, 24));
-    }
-
+bool ThemedWindowHost::RebuildResources(const Theme& theme) {    const Theme resolved = ResolveTheme(theme);    HBRUSH newBackgroundBrush = CreateSolidBrush(resolved.background);
     FontSpec titleSpec = resolved.uiFont;
     titleSpec.height += titleFontOffset_;
-    titleSpec.weight = FW_SEMIBOLD;
-    HFONT newTitleFont = CreateSafeFont(titleSpec);
-
+    titleSpec.weight = FW_SEMIBOLD;    HFONT newTitleFont = CreateFont(titleSpec);
     FontSpec subtitleSpec = resolved.uiFont;
-    subtitleSpec.height += subtitleFontOffset_;
-    HFONT newSubtitleFont = CreateSafeFont(subtitleSpec);
-
+    subtitleSpec.height += subtitleFontOffset_;    HFONT newSubtitleFont = CreateFont(subtitleSpec);
     FontSpec sectionSpec = resolved.uiFont;
     sectionSpec.height += sectionFontOffset_;
-    sectionSpec.weight = FW_SEMIBOLD;
-    HFONT newSectionFont = CreateSafeFont(sectionSpec);
-
+    sectionSpec.weight = FW_SEMIBOLD;    HFONT newSectionFont = CreateFont(sectionSpec);
     FontSpec bodySpec = resolved.uiFont;
-    bodySpec.height += bodyFontOffset_;
-    HFONT newBodyFont = CreateSafeFont(bodySpec);
-
-    if (!newBackgroundBrush) {
-        newBackgroundBrush = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
-    }
-    if (!newTitleFont) {
-        newTitleFont = reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
-    }
-    if (!newSubtitleFont) {
-        newSubtitleFont = reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
-    }
-    if (!newSectionFont) {
-        newSectionFont = reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
-    }
-    if (!newBodyFont) {
-        newBodyFont = reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
+    bodySpec.height += bodyFontOffset_;    HFONT newBodyFont = CreateFont(bodySpec);
+    if (!newBackgroundBrush || !newTitleFont || !newSubtitleFont || !newSectionFont || !newBodyFont) {        if (newBackgroundBrush) DeleteObject(newBackgroundBrush);
+        if (newTitleFont) DeleteObject(newTitleFont);
+        if (newSubtitleFont) DeleteObject(newSubtitleFont);
+        if (newSectionFont) DeleteObject(newSectionFont);
+        if (newBodyFont) DeleteObject(newBodyFont);
+        return false;
     }
 
-    if (backgroundBrush_ && backgroundBrush_ != GetStockObject(BLACK_BRUSH)) DeleteObject(backgroundBrush_);
-    if (titleFont_ && titleFont_ != GetStockObject(DEFAULT_GUI_FONT)) DeleteObject(titleFont_);
-    if (subtitleFont_ && subtitleFont_ != GetStockObject(DEFAULT_GUI_FONT)) DeleteObject(subtitleFont_);
-    if (sectionFont_ && sectionFont_ != GetStockObject(DEFAULT_GUI_FONT)) DeleteObject(sectionFont_);
-    if (bodyFont_ && bodyFont_ != GetStockObject(DEFAULT_GUI_FONT)) DeleteObject(bodyFont_);
+    if (backgroundBrush_) DeleteObject(backgroundBrush_);
+    if (titleFont_) DeleteObject(titleFont_);
+    if (subtitleFont_) DeleteObject(subtitleFont_);
+    if (sectionFont_) DeleteObject(sectionFont_);
+    if (bodyFont_) DeleteObject(bodyFont_);
 
     backgroundBrush_ = newBackgroundBrush;
     titleFont_ = newTitleFont;
@@ -197,18 +145,13 @@ bool ThemedWindowHost::RebuildResources(const Theme& theme) {
     sectionFont_ = newSectionFont;
     bodyFont_ = newBodyFont;
     theme_ = resolved;
-    themeManager_.SetTheme(theme_);
-    ApplyTitleBarTheme();
-    return true;
+    themeManager_.SetTheme(theme_);    ApplyTitleBarTheme();    return true;
 }
 
-void ThemedWindowHost::ApplyTitleBarTheme() const {
-    if (!hwnd_) {
-        return;
+void ThemedWindowHost::ApplyTitleBarTheme() const {    if (!hwnd_) {        return;
     }
 
-    if (titleBarStyle_ == TitleBarStyle::System) {
-        return;
+    if (titleBarStyle_ == TitleBarStyle::System) {        return;
     }
 
     BOOL immersive = TRUE;
@@ -234,10 +177,11 @@ void ThemedWindowHost::ApplyTitleBarTheme() const {
         return;
     }
 
-    DwmSetWindowAttribute(hwnd_, DWMWA_USE_IMMERSIVE_DARK_MODE, &immersive, sizeof(immersive));
-    DwmSetWindowAttribute(hwnd_, DWMWA_CAPTION_COLOR, &captionBackground, sizeof(captionBackground));
-    DwmSetWindowAttribute(hwnd_, DWMWA_TEXT_COLOR, &captionText, sizeof(captionText));
-    DwmSetWindowAttribute(hwnd_, DWMWA_BORDER_COLOR, &captionBorder, sizeof(captionBorder));
-}
+    const HRESULT hr1 = DwmSetWindowAttribute(hwnd_, DWMWA_USE_IMMERSIVE_DARK_MODE, &immersive, sizeof(immersive));
+    const HRESULT hr2 = DwmSetWindowAttribute(hwnd_, DWMWA_CAPTION_COLOR, &captionBackground, sizeof(captionBackground));
+    const HRESULT hr3 = DwmSetWindowAttribute(hwnd_, DWMWA_TEXT_COLOR, &captionText, sizeof(captionText));
+    const HRESULT hr4 = DwmSetWindowAttribute(hwnd_, DWMWA_BORDER_COLOR, &captionBorder, sizeof(captionBorder));}
 
 }  // namespace darkui
+
+

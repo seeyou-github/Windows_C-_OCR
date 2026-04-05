@@ -151,6 +151,17 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
             {L"bestvideo", 2, true},
             {L"137 - mp4 1080p", 3, true},
             {L"140 - m4a 128k", 4, false},
+            {L"18 - mp4 360p", 5, false},
+            {L"22 - mp4 720p", 6, false},
+            {L"248 - webm 1080p", 7, true},
+            {L"251 - webm opus", 8, false},
+            {L"299 - mp4 1080p60", 9, true},
+            {L"399 - mp4 1080p AV1", 10, true},
+            {L"401 - mp4 2160p AV1", 11, true},
+            {L"616 - mp4 1080 HDR", 12, true},
+            {L"617 - mp4 2160 HDR", 13, true},
+            {L"Download subtitles", 14, false},
+            {L"Extract thumbnail", 15, false},
         };
         comboOptions.selection = 0;
         comboOptions.variant = darkui::FieldVariant::Panel;

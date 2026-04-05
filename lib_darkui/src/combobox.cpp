@@ -150,8 +150,10 @@ Theme ResolveTheme(const Theme& theme) {
     resolved.radioDisabledText = resolved.buttonDisabledText;
     resolved.tableBackground = theme.primaryBackground;
     resolved.tableText = theme.primaryText;
+    resolved.tableSelectedText = theme.highlightText;
     resolved.tableHeaderBackground = theme.secondaryBackground;
     resolved.tableHeaderText = theme.highlightText;
+    resolved.tableSelectedBackground = theme.accentSecondary;
     resolved.tableGrid = resolved.border;
     resolved.sliderBackground = theme.primaryBackground;
     resolved.sliderTrack = theme.secondaryBackground;
@@ -298,7 +300,11 @@ struct ComboBox::Impl {
     }
 
     void RefreshText() {
-        const std::wstring text = (selection >= 0 && selection < static_cast<int>(items.size())) ? items[selection].text : L"";
+        std::wstring text;
+        if (selection >= 0 && selection < static_cast<int>(items.size())) {
+            const ComboItem& item = items[selection];
+            text = item.displayText.empty() ? item.text : item.displayText;
+        }
         SetWindowTextW(owner->comboHwnd_, text.c_str());
         InvalidateRect(owner->comboHwnd_, nullptr, TRUE);
     }
@@ -335,14 +341,15 @@ struct ComboBox::Impl {
         }
 
         POINT popupOrigin{comboRect.left, comboRect.bottom + owner->theme_.popupOffsetY};
-        const int desiredRows = std::max(1, static_cast<int>(items.size()));
+        const int desiredRows = std::clamp(static_cast<int>(items.size()), 1, 8);
         const int desiredHeight = std::max(owner->itemHeight_,
                                            desiredRows * owner->itemHeight_ + owner->theme_.popupBorder * 2);
         const int availableHeight = std::max(owner->itemHeight_,
                                              static_cast<int>(workArea.bottom - popupOrigin.y - 8));
         const int hostHeight = std::max(owner->itemHeight_,
                                         std::min(desiredHeight, std::max(owner->itemHeight_, availableHeight)));
-        const int width = comboRect.right - comboRect.left;
+        const int comboWidth = comboRect.right - comboRect.left;
+        const int width = owner->popupWidth_ > 0 ? owner->popupWidth_ : comboWidth;
         popupOrigin.x = std::max(workArea.left, std::min(popupOrigin.x, workArea.right - width));
         popupOrigin.y = std::max(workArea.top, std::min(popupOrigin.y, workArea.bottom - hostHeight));
 
@@ -682,6 +689,7 @@ bool ComboBox::Create(HWND parent, int controlId, const Theme& theme, const Opti
     controlId_ = controlId;
     theme_ = ResolveTheme(theme);
     variant_ = options.variant;
+    popupWidth_ = options.popupWidth;
     itemHeight_ = ResolveComboItemHeight(theme_, variant_);
     impl_->instance = reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(parent, GWLP_HINSTANCE));
     if (!impl_->instance) {
@@ -748,7 +756,7 @@ bool ComboBox::Create(HWND parent, int controlId, const Theme& theme, const Opti
         return false;
     }
     SendMessageW(popupList_, WM_SETFONT, reinterpret_cast<WPARAM>(impl_->font), TRUE);
-    SetWindowTheme(popupList_, L"", L"");
+    SetWindowTheme(popupList_, L"DarkMode_Explorer", nullptr);
     StripClientEdge(popupList_);
     SetWindowSubclass(comboHwnd_,
                       Impl::ComboSubclassProc,
@@ -871,7 +879,11 @@ std::size_t ComboBox::GetCount() const {
 }
 
 std::wstring ComboBox::GetText() const {
-    return (impl_->selection >= 0 && impl_->selection < static_cast<int>(impl_->items.size())) ? impl_->items[impl_->selection].text : L"";
+    if (impl_->selection < 0 || impl_->selection >= static_cast<int>(impl_->items.size())) {
+        return L"";
+    }
+    const ComboItem& item = impl_->items[impl_->selection];
+    return item.displayText.empty() ? item.text : item.displayText;
 }
 
 ComboItem ComboBox::GetItem(int index) const {
@@ -886,6 +898,13 @@ void ComboBox::SetCornerRadius(int radius) {
     if (comboHwnd_) {
         impl_->UpdateWindowRegion();
         InvalidateRect(comboHwnd_, nullptr, TRUE);
+    }
+}
+
+void ComboBox::SetPopupWidth(int width) {
+    popupWidth_ = width;
+    if (impl_ && impl_->IsPopupVisible()) {
+        impl_->RepositionPopup();
     }
 }
 

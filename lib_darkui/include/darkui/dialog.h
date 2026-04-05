@@ -17,9 +17,16 @@ namespace darkui {
 // - Use SetMessage() for a simple centered message body, or create your own child
 //   controls inside content_hwnd() for custom layouts.
 // - Call ShowModal() to display the popup and run a local modal message loop.
+// - Read values from child controls after ShowModal() returns and before the Dialog
+//   object is destroyed when the dialog contains input fields.
 // Notes:
 // - Unknown WM_COMMAND / WM_NOTIFY messages are forwarded to the owner window.
 // - The built-in message label can be hidden when you want a fully custom body.
+// - EndDialog() now ends the modal loop and hides the dialog window first; final
+//   destruction still happens in Destroy() or the Dialog destructor.
+// - This avoids a real bug seen in production: if the dialog destroyed its child
+//   controls inside EndDialog(), callers that read Edit/ComboBox values after
+//   ShowModal() returned could get empty text even though the user had typed input.
 class Dialog {
 public:
     struct Options {
@@ -87,9 +94,18 @@ public:
     void SetMessageVisible(bool visible);
     // Shows or hides the cancel button.
     void SetCancelVisible(bool visible);
-    // Sets the modal result and closes the dialog.
+    // Sets the modal result, exits the modal loop, and hides the dialog window.
+    // Notes:
+    // - This does not immediately destroy the dialog window.
+    // - Delayed destruction lets caller code safely read child-control values after
+    //   ShowModal() returns.
     void EndDialog(Result result);
     // Shows the dialog modally and returns the final modal result.
+    // Notes:
+    // - After this returns, custom child controls are still available until Destroy()
+    //   or the Dialog destructor runs.
+    // - For input dialogs, read control values immediately after ShowModal() returns,
+    //   then let the Dialog object fall out of scope or call Destroy().
     Result ShowModal();
 
 private:

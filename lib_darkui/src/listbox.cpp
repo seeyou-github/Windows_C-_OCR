@@ -47,6 +47,16 @@ void StripClientEdge(HWND window) {
     }
 }
 
+COLORREF MixColor(COLORREF a, COLORREF b, double ratio) {
+    ratio = std::clamp(ratio, 0.0, 1.0);
+    const auto mix = [ratio](int x, int y) {
+        return static_cast<int>(x + (y - x) * ratio + 0.5);
+    };
+    return RGB(mix(GetRValue(a), GetRValue(b)),
+               mix(GetGValue(a), GetGValue(b)),
+               mix(GetBValue(a), GetBValue(b)));
+}
+
 }  // namespace
 
 struct ListBox::Impl {
@@ -194,8 +204,37 @@ struct ListBox::Impl {
             return;
         }
 
+        COLORREF itemTextColor = owner->theme_.listBoxText;
+        COLORREF itemBackgroundColor = owner->theme_.listBoxPanel;
+        bool hasItemTextColor = false;
+        bool hasItemBackgroundColor = false;
+        if (draw->itemID < items.size()) {
+            const ListBoxItem& item = items[draw->itemID];
+            if (item.textColor != CLR_INVALID) {
+                itemTextColor = item.textColor;
+                hasItemTextColor = true;
+            }
+            if (item.backgroundColor != CLR_INVALID) {
+                itemBackgroundColor = item.backgroundColor;
+                hasItemBackgroundColor = true;
+            }
+        }
+
         const bool selected = (draw->itemState & ODS_SELECTED) != 0;
-        FillRect(draw->hDC, &draw->rcItem, selected ? brushSelected : brushPanel);
+        HBRUSH rowBrush = nullptr;
+        if (selected && hasItemBackgroundColor) {
+            // Keep semantic row background visible even when selected.
+            const COLORREF mixed = MixColor(itemBackgroundColor, owner->theme_.listBoxItemSelected, 0.35);
+            rowBrush = CreateSolidBrush(mixed);
+        } else if (selected) {
+            rowBrush = brushSelected;
+        } else {
+            rowBrush = CreateSolidBrush(itemBackgroundColor);
+        }
+        FillRect(draw->hDC, &draw->rcItem, rowBrush ? rowBrush : brushPanel);
+        if (rowBrush && rowBrush != brushSelected) {
+            DeleteObject(rowBrush);
+        }
 
         std::wstring text;
         if (draw->itemID < items.size()) {
@@ -215,7 +254,11 @@ struct ListBox::Impl {
 
         HFONT oldFont = font ? reinterpret_cast<HFONT>(SelectObject(draw->hDC, font)) : nullptr;
         SetBkMode(draw->hDC, TRANSPARENT);
-        SetTextColor(draw->hDC, selected ? owner->theme_.listBoxItemSelectedText : owner->theme_.listBoxText);
+        if (selected && !hasItemTextColor) {
+            SetTextColor(draw->hDC, owner->theme_.listBoxItemSelectedText);
+        } else {
+            SetTextColor(draw->hDC, itemTextColor);
+        }
         DrawTextW(draw->hDC, text.c_str(), -1, &textRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
         if (oldFont) {
             SelectObject(draw->hDC, oldFont);
@@ -392,7 +435,7 @@ bool ListBox::Create(HWND parent, int controlId, const Theme& theme, const Optio
         return false;
     }
 
-    SetWindowTheme(listHwnd_, L"", L"");
+    SetWindowTheme(listHwnd_, L"DarkMode_Explorer", nullptr);
     StripClientEdge(listHwnd_);
 
     if (!impl_->UpdateThemeResources()) {

@@ -27,3 +27,8 @@ Notes:
 - The app sends a request to `https://api.siliconflow.cn/v1/chat/completions`
 - Local images are converted to `data:image/...;base64,...`
 - Default model in UI: `zai-org/GLM-4.5V`
+
+Agent lessons:
+
+- [供应商页切换闪烁复盘](docs/agent-lessons/provider-tab-flicker.md)
+- [托盘图标无法点击复盘](docs/agent-lessons/tray-icon-not-clickable.md)
