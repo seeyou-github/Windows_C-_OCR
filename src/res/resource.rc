@@ -6,8 +6,8 @@ IDI_APP_ICON ICON "icon.ico"
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE "OCR|翻译"
-    IDS_TRAY_TIP "OCR|翻译"
+    IDS_APP_TITLE "OCR | 翻译"
+    IDS_TRAY_TIP "OCR"
     IDS_TOOL_OPEN_IMAGE "上传图片识别"
     IDS_TOOL_RUN_OCR "开始识别"
     IDS_TOOL_TRANSLATE "翻译"

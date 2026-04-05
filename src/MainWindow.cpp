@@ -61,8 +61,6 @@ struct ClipboardTextSnapshot {
     std::wstring text;
 };
 
-constexpr GUID kTrayIconGuid =
-    {0x7a4ef120, 0x8324, 0x4c0b, {0x8d, 0x1d, 0xc2, 0xb6, 0x6f, 0x4f, 0x7a, 0x91}};
 constexpr wchar_t kRecognitionToastClassName[] = L"Win32OcrRecognitionToast";
 
 HWND g_hotkeyMainHwnd = nullptr;
@@ -1108,10 +1106,9 @@ void MainWindow::AddTrayIcon() {
     nid.cbSize = sizeof(nid);
     nid.hWnd = hwnd_;
     nid.uID = ID_TRAYICON;
-    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_GUID;
+    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     nid.uCallbackMessage = WM_APP + 1;
     nid.hIcon = appIconSmall_ ? appIconSmall_ : appIconLarge_;
-    nid.guidItem = kTrayIconGuid;
     wcsncpy_s(nid.szTip, LoadS(IDS_TRAY_TIP).c_str(), _TRUNCATE);
     Shell_NotifyIconW(NIM_DELETE, &nid);
     trayAdded_ = Shell_NotifyIconW(NIM_ADD, &nid) == TRUE;
@@ -1126,8 +1123,6 @@ void MainWindow::RemoveTrayIcon() {
     nid.cbSize = sizeof(nid);
     nid.hWnd = hwnd_;
     nid.uID = ID_TRAYICON;
-    nid.uFlags = NIF_GUID;
-    nid.guidItem = kTrayIconGuid;
     Shell_NotifyIconW(NIM_DELETE, &nid);
     trayAdded_ = false;
 }
