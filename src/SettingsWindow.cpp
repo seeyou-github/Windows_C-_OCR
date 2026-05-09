@@ -45,11 +45,13 @@ struct SettingsWindow::DefaultsPage {
     darkui::Static providerLabel;
     darkui::Static ocrLabel;
     darkui::Static translateLabel;
+    darkui::Static ocrTimeoutLabel;
     darkui::Static ocrPromptLabel;
     darkui::Static translatePromptLabel;
     darkui::ComboBox providerCombo;
     darkui::ComboBox ocrCombo;
     darkui::ComboBox translateCombo;
+    darkui::Edit ocrTimeoutEdit;
     darkui::Edit ocrPromptEdit;
     darkui::Edit translatePromptEdit;
     std::vector<DefaultModelChoice> modelChoices;
@@ -610,6 +612,8 @@ bool SettingsWindow::OnCreate(HWND hwnd) {
     defaultsPage_->ocrLabel.Create(defaultsPage_->root.hwnd(), 8201, host_.theme(), labelOptions);
     labelOptions.text = LoadS(IDS_DEFAULT_TRANSLATE_MODEL);
     defaultsPage_->translateLabel.Create(defaultsPage_->root.hwnd(), 8202, host_.theme(), labelOptions);
+    labelOptions.text = LoadS(IDS_DEFAULT_OCR_TIMEOUT);
+    defaultsPage_->ocrTimeoutLabel.Create(defaultsPage_->root.hwnd(), 8207, host_.theme(), labelOptions);
     labelOptions.text = L"OCR提示词设置";
     defaultsPage_->ocrPromptLabel.Create(defaultsPage_->root.hwnd(), 8203, host_.theme(), labelOptions);
     labelOptions.text = L"文本翻译提示词设置";
@@ -620,6 +624,10 @@ bool SettingsWindow::OnCreate(HWND hwnd) {
     defaultsPage_->providerCombo.Create(defaultsPage_->root.hwnd(), ID_DEFAULT_PROVIDER_COMBO, host_.theme(), comboOptions);
     defaultsPage_->ocrCombo.Create(defaultsPage_->root.hwnd(), ID_DEFAULT_OCR_MODEL_COMBO, host_.theme(), comboOptions);
     defaultsPage_->translateCombo.Create(defaultsPage_->root.hwnd(), ID_DEFAULT_TRANSLATE_MODEL_COMBO, host_.theme(), comboOptions);
+    darkui::Edit::Options timeoutEditOptions;
+    timeoutEditOptions.variant = darkui::FieldVariant::Panel;
+    timeoutEditOptions.style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_NUMBER;
+    defaultsPage_->ocrTimeoutEdit.Create(defaultsPage_->root.hwnd(), ID_DEFAULT_OCR_TIMEOUT_EDIT, host_.theme(), timeoutEditOptions);
     darkui::Edit::Options promptEditOptions;
     promptEditOptions.variant = darkui::FieldVariant::Panel;
     promptEditOptions.style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL;
@@ -688,9 +696,9 @@ bool SettingsWindow::OnCreate(HWND hwnd) {
         providerPage_->modelSearchLabel, providerPage_->modelSearchEdit, providerPage_->modelListLabel, providerPage_->modelList,
         providerPage_->modelAdd, providerPage_->modelEdit, providerPage_->modelRemove, providerPage_->modelToggle, providerPage_->fetchModels, providerPage_->testModel,
         defaultsPage_->root, defaultsPage_->providerLabel, defaultsPage_->ocrLabel, defaultsPage_->translateLabel,
-        defaultsPage_->ocrPromptLabel, defaultsPage_->translatePromptLabel,
+        defaultsPage_->ocrTimeoutLabel, defaultsPage_->ocrPromptLabel, defaultsPage_->translatePromptLabel,
         defaultsPage_->providerCombo, defaultsPage_->ocrCombo, defaultsPage_->translateCombo,
-        defaultsPage_->ocrPromptEdit, defaultsPage_->translatePromptEdit,
+        defaultsPage_->ocrTimeoutEdit, defaultsPage_->ocrPromptEdit, defaultsPage_->translatePromptEdit,
         displayPage_->root, displayPage_->themeLabel, displayPage_->fontLabel, displayPage_->ocrResultFilterLabel,
         displayPage_->translateResultFilterLabel, displayPage_->themeCombo, displayPage_->fontCombo,
         displayPage_->startTrayCheck, displayPage_->copyAfterHotkeyOcrCheck,
@@ -1091,10 +1099,12 @@ void SettingsWindow::Layout() {
     MoveWindow(defaultsPage_->ocrCombo.hwnd(), 220, 34, 520, 34, TRUE);
     MoveWindow(defaultsPage_->translateLabel.hwnd(), 28, 104, 160, 26, TRUE);
     MoveWindow(defaultsPage_->translateCombo.hwnd(), 220, 98, 520, 34, TRUE);
-    MoveWindow(defaultsPage_->ocrPromptLabel.hwnd(), 28, 170, 180, 26, TRUE);
-    MoveWindow(defaultsPage_->ocrPromptEdit.hwnd(), 220, 164, 520, 110, TRUE);
-    MoveWindow(defaultsPage_->translatePromptLabel.hwnd(), 28, 296, 180, 26, TRUE);
-    MoveWindow(defaultsPage_->translatePromptEdit.hwnd(), 220, 290, 520, 110, TRUE);
+    MoveWindow(defaultsPage_->ocrTimeoutLabel.hwnd(), 28, 168, 180, 26, TRUE);
+    MoveWindow(defaultsPage_->ocrTimeoutEdit.hwnd(), 220, 162, 160, 34, TRUE);
+    MoveWindow(defaultsPage_->ocrPromptLabel.hwnd(), 28, 230, 180, 26, TRUE);
+    MoveWindow(defaultsPage_->ocrPromptEdit.hwnd(), 220, 224, 520, 110, TRUE);
+    MoveWindow(defaultsPage_->translatePromptLabel.hwnd(), 28, 356, 180, 26, TRUE);
+    MoveWindow(defaultsPage_->translatePromptEdit.hwnd(), 220, 350, 520, 110, TRUE);
 
     MoveWindow(displayPage_->themeLabel.hwnd(), 28, 40, 160, 26, TRUE);
     MoveWindow(displayPage_->themeCombo.hwnd(), 220, 34, 260, 34, TRUE);
@@ -1373,6 +1383,7 @@ void SettingsWindow::RefreshDefaultsPage() {
     }
     defaultsPage_->ocrCombo.SetSelection(ocrSelection, false);
     defaultsPage_->translateCombo.SetSelection(translateSelection, false);
+    defaultsPage_->ocrTimeoutEdit.SetText(std::to_wstring(std::clamp(config_.ocrTimeoutSeconds, 1, 300)));
     defaultsPage_->ocrPromptEdit.SetText(config_.ocrPrompt);
     defaultsPage_->translatePromptEdit.SetText(config_.translateTextPrompt);
 }
@@ -1544,6 +1555,11 @@ void SettingsWindow::SaveConfig() {
             config_.defaultTranslateProviderId = defaultsPage_->modelChoices[translateSelection].providerId;
             config_.defaultTranslateModel = defaultsPage_->modelChoices[translateSelection].modelId;
         }
+        int timeoutSeconds = _wtoi(defaultsPage_->ocrTimeoutEdit.GetText().c_str());
+        if (timeoutSeconds <= 0) {
+            timeoutSeconds = 6;
+        }
+        config_.ocrTimeoutSeconds = std::clamp(timeoutSeconds, 1, 300);
     }
     std::wstring error;    if (!store_.Save(config_, error)) {        SetStatus(error);
         return;

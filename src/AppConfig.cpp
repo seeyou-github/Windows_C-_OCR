@@ -345,6 +345,7 @@ AppConfig ConfigStore::CreateDefaultConfig() {
     config.translateTextPrompt = kDefaultTranslateTextPrompt;
     config.ocrResultFilter.clear();
     config.translateResultFilter.clear();
+    config.ocrTimeoutSeconds = 6;
     config.startInTray = true;
     config.copyAfterHotkeyOcr = false;
     config.themeName = L"graphite";
@@ -414,6 +415,7 @@ bool ConfigStore::Load(AppConfig& config, std::wstring& error) const {
             else if (key == L"translate_text_prompt") config.translateTextPrompt = DecodeIniMultiline(value);
             else if (key == L"ocr_result_filter") config.ocrResultFilter = DecodeIniMultiline(value);
             else if (key == L"translate_result_filter") config.translateResultFilter = DecodeIniMultiline(value);
+            else if (key == L"ocr_timeout_seconds") config.ocrTimeoutSeconds = std::clamp(TextToInt(value, config.ocrTimeoutSeconds), 1, 300);
             else if (key == L"start_in_tray") config.startInTray = TextToBool(value, config.startInTray);
             else if (key == L"copy_after_hotkey_ocr") config.copyAfterHotkeyOcr = TextToBool(value, config.copyAfterHotkeyOcr);
             else if (key == L"theme") config.themeName = value;
@@ -540,6 +542,7 @@ bool ConfigStore::Save(const AppConfig& config, std::wstring& error) const {
     lines.push_back(L"translate_text_prompt=" + EncodeIniMultiline(config.translateTextPrompt));
     lines.push_back(L"ocr_result_filter=" + EncodeIniMultiline(config.ocrResultFilter));
     lines.push_back(L"translate_result_filter=" + EncodeIniMultiline(config.translateResultFilter));
+    lines.push_back(L"ocr_timeout_seconds=" + std::to_wstring(std::clamp(config.ocrTimeoutSeconds, 1, 300)));
     lines.push_back(L"start_in_tray=" + BoolToText(config.startInTray));
     lines.push_back(L"copy_after_hotkey_ocr=" + BoolToText(config.copyAfterHotkeyOcr));
     lines.push_back(L"theme=" + MakeIniSafe(config.themeName));

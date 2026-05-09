@@ -7,6 +7,7 @@
 #include "UiText.h"
 #include "res/resource.h"
 
+#include <algorithm>
 #include <dwmapi.h>
 #include <commdlg.h>
 #include <cwctype>
@@ -1361,7 +1362,7 @@ void MainWindow::BeginAsyncRequest(bool translateOnly, const std::wstring& input
     options.ocrPrompt = config_.ocrPrompt;
     options.translateTextPrompt = config_.translateTextPrompt;
     // OCR request should fail fast for silent/non-responsive models.
-    options.timeoutMs = translateOnly ? 30000 : 6000;
+    options.timeoutMs = translateOnly ? 30000 : static_cast<DWORD>(std::clamp(config_.ocrTimeoutSeconds, 1, 300) * 1000);
 
     requestInFlight_ = true;
     activeTranslateRequest_ = translateOnly;

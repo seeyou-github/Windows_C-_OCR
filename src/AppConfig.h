@@ -43,6 +43,7 @@ struct AppConfig {
     std::wstring translateTextPrompt;
     std::wstring ocrResultFilter;
     std::wstring translateResultFilter;
+    int ocrTimeoutSeconds = 6;
     bool startInTray = true;
     bool copyAfterHotkeyOcr = false;
     std::wstring themeName = L"graphite";
